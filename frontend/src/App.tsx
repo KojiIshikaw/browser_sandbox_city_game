@@ -41,38 +41,45 @@ const App: React.FC = () => {
 	useEffect(() => {
 		const initialHand: Card[] = [
 			{ id: 1, name: 'Farm', cost: 20, effect: () => addResource(10) },
-			{ id: 2, name: 'Factory', cost: 50, effect: () => addResource(30) },
-			{ id: 3, name: 'House', cost: 10, effect: () => addResource(1) },
-			{ id: 4, name: 'Shop', cost: 30, effect: () => addResource(15) },
-			{ id: 5, name: 'Town Hall', cost: 60, effect: () => addResidents(5) }, // 新しいカード
+			{ id: 2, name: 'Farm', cost: 20, effect: () => addResource(10) },
+			{ id: 3, name: 'Factory', cost: 50, effect: () => addResource(30) },
+			{ id: 4, name: 'House', cost: 10, effect: () => addResource(1) },
+			{ id: 5, name: 'Shop', cost: 30, effect: () => addResource(15) },
+			{ id: 6, name: 'Town Hall', cost: 60, effect: () => addResidents(5) }, // 新しいカード
 		];
 		setHand(initialHand);
 	}, []);
 
 	const addResource = (amount: number) => {
-		if (gameState) {
-			const updatedResources = gameState.resources + amount;
-			setGameState({ ...gameState, resources: updatedResources });
+		setGameState(prevState => {
+			if (!prevState) return prevState;
+			const updatedResources = prevState.resources + amount;
+
 			// バックエンドに更新を送信
 			axios.post('/api/game-state', { resources: updatedResources })
 				.catch(error => {
 					console.error('Error updating resources:', error);
 					setNotification('資源の更新に失敗しました。');
 				});
-		}
+
+			return { ...prevState, resources: updatedResources };
+		});
 	};
 
 	const addResidents = (amount: number) => {
-		if (gameState) {
-			const updatedResidents = gameState.residents + amount;
-			setGameState({ ...gameState, residents: updatedResidents });
+		setGameState(prevState => {
+			if (!prevState) return prevState;
+			const updatedResidents = prevState.residents + amount;
+
 			// バックエンドに更新を送信
 			axios.post('/api/game-state', { residents: updatedResidents })
 				.catch(error => {
 					console.error('Error updating residents:', error);
 					setNotification('住民数の更新に失敗しました。');
 				});
-		}
+
+			return { ...prevState, residents: updatedResidents };
+		});
 	};
 
 	const handleCardSelect = (card: Card) => {
