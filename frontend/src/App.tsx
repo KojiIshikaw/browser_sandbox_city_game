@@ -121,16 +121,38 @@ const App: React.FC = () => {
 	return (
 		<div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
 			<Canvas>
+				{/* 背景色を空色に設定 */}
+				<color attach="background" args={['skyblue']} />
+
 				<PerspectiveCamera makeDefault position={[0, 10, 20]} />
-				<ambientLight intensity={0.5} />
-				<directionalLight position={[10, 10, 5]} intensity={1} />
+				<ambientLight intensity={0.8} />
+				<directionalLight position={[10, 10, 5]} intensity={1.5} />
+
+				{/* 茶色の地面を追加 */}
+				<mesh rotation={[-Math.PI / 2, 0, 0]} position={[3, -0.5, 3]}>
+					<planeGeometry args={[8, 8]} />
+					<meshStandardMaterial color="burlywood" />
+				</mesh>
+
 				{/* フィールドのレンダリング */}
 				{gameState.field.map((building, index) => {
-					const position: [number, number, number] = [
-						(index % 4) * 2, // X座標
-						0,               // Y座標（モデルによって調整）
-						Math.floor(index / 4) * 2 // Z座標
-					];
+					// 基本位置を計算
+					const x = (index % 4) * 2;
+					const z = Math.floor(index / 4) * 2;
+
+					// 建物の種類に応じて y 座標を設定
+					let y = 0; // デフォルトの y 座標
+					if (building) {
+						const buildingType = building.toLowerCase();
+						if (buildingType === 'farm') {
+							y = -0.4; // Farm の y 座標を -0.4 に設定
+						} else if (buildingType === 'house') {
+							y = 0; // House の y 座標を 0 に設定（必要に応じて調整）
+						} else {
+							y = 0.5; // その他の建物の y 座標を 0.5 に設定
+						}
+					}
+					const position: [number, number, number] = [x, y, z];
 
 					if (!building) {
 						return (
@@ -169,8 +191,10 @@ const App: React.FC = () => {
 							);
 					}
 				})}
+
 				<OrbitControls />
 			</Canvas>
+
 			{/* UIコンポーネント */}
 			<div style={{
 				position: 'absolute',
@@ -188,6 +212,7 @@ const App: React.FC = () => {
 					<Hand cards={hand} onSelect={handleCardSelect} />
 				</div>
 			</div>
+
 			{/* 通知メッセージ */}
 			{notification && (
 				<div style={{
