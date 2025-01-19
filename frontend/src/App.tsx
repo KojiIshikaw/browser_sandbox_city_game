@@ -1,4 +1,3 @@
-// frontend/src/App.tsx
 import React, { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
@@ -9,6 +8,7 @@ type GameState = {
 	turn: number;
 	resources: number;
 	field: (string | null)[];
+	residents: number; // 住民数を追加
 };
 
 type Card = {
@@ -43,6 +43,7 @@ const App: React.FC = () => {
 			{ id: 3, name: 'Research Lab', cost: 100, effect: () => addResource(60) },
 			{ id: 4, name: 'Shop', cost: 30, effect: () => addResource(15) },
 			{ id: 5, name: 'Market', cost: 40, effect: () => addResource(20) },
+			{ id: 6, name: 'Town Hall', cost: 60, effect: () => addResidents(5) }, // 新しいカード
 		];
 		setHand(initialHand);
 	}, []);
@@ -60,6 +61,19 @@ const App: React.FC = () => {
 		}
 	};
 
+	const addResidents = (amount: number) => {
+		if (gameState) {
+			const updatedResidents = gameState.residents + amount;
+			setGameState({ ...gameState, residents: updatedResidents });
+			// バックエンドに更新を送信
+			axios.post('/api/game-state', { residents: updatedResidents })
+				.catch(error => {
+					console.error('Error updating residents:', error);
+					setNotification('住民数の更新に失敗しました。');
+				});
+		}
+	};
+
 	const handleCardSelect = (card: Card) => {
 		if (gameState) {
 			// 資源のチェック
@@ -68,15 +82,8 @@ const App: React.FC = () => {
 				return;
 			}
 
-			// 空いている場所を探す
-			const emptyIndex = gameState.field.findIndex(slot => slot === null);
-			if (emptyIndex === -1) {
-				setNotification('置ける場所がありません!');
-				return;
-			}
-
-			// 建物の配置をバックエンドにリクエスト
-			axios.post('/api/place-building', { index: emptyIndex, building: card.name })
+			// 建物の配置をバックエンドにリクエスト（ランダム配置）
+			axios.post('/api/place-building', { building: card.name })
 				.then(response => {
 					setGameState(response.data);
 					// カードの効果を適用
@@ -120,7 +127,6 @@ const App: React.FC = () => {
 						<mesh
 							key={index}
 							position={[(index % 4) * 2, 0.5, Math.floor(index / 4) * 2]}
-						// onClick ハンドラーを削除
 						>
 							<boxGeometry args={[1, 1, 1]} />
 							<meshStandardMaterial color="lightgray" opacity={0.5} transparent />
@@ -130,10 +136,21 @@ const App: React.FC = () => {
 				<OrbitControls />
 			</Canvas>
 			{/* UIコンポーネント */}
-			<div style={{ position: 'absolute', bottom: 0, width: '100%', padding: '10px', background: 'rgba(255, 255, 255, 0.8)' }}>
-				<p>ターン: {gameState.turn}</p>
-				<p>資源: {gameState.resources}</p>
-				<Hand cards={hand} onSelect={handleCardSelect} />
+			<div style={{
+				position: 'absolute',
+				bottom: 0,
+				width: '100%',
+				padding: '10px',
+				background: 'rgba(255, 255, 255, 0.8)',
+				display: 'flex',
+				justifyContent: 'center'
+			}}>
+				<div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+					<p style={{ color: 'black' }}>ターン: {gameState.turn}</p>
+					<p style={{ color: 'black' }}>資源: {gameState.resources}</p>
+					<p style={{ color: 'black' }}>住民: {gameState.residents}</p>
+					<Hand cards={hand} onSelect={handleCardSelect} />
+				</div>
 			</div>
 			{/* 通知メッセージ */}
 			{notification && (
@@ -167,6 +184,8 @@ const getBuildingColor = (type: string): string => {
 			return 'yellow';
 		case 'market':
 			return 'purple';
+		case 'town hall':
+			return 'orange'; // 新しい建物の色を追加
 		default:
 			return 'gray';
 	}

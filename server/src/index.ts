@@ -26,6 +26,7 @@ let gameState: GameState = {
 	turn: 1,
 	resources: 100,
 	field: Array(16).fill(null), // 4x4フィールドの初期状態
+	residents: 10, // 初期住民数
 };
 
 // ゲーム状態の取得
@@ -35,31 +36,35 @@ app.get('/api/game-state', (req, res) => {
 
 // ゲーム状態の更新
 app.post('/api/game-state', (req, res) => {
-	const { turn, resources, field } = req.body;
+	const { turn, resources, field, residents } = req.body;
 	if (typeof turn === 'number') gameState.turn = turn;
 	if (typeof resources === 'number') gameState.resources = resources;
 	if (Array.isArray(field) && field.length === 16) gameState.field = field;
+	if (typeof residents === 'number') gameState.residents = residents;
 	res.json(gameState);
 });
 
-// 建物を配置するエンドポイント
+// 建物を配置するエンドポイント（ランダム配置）
 app.post('/api/place-building', (req, res) => {
-	const { index, building } = req.body;
-
-	if (typeof index !== 'number' || index < 0 || index >= 16) {
-		res.status(400).json({ error: 'Invalid index' });
-		return;
-	}
+	const { building } = req.body;
 
 	if (typeof building !== 'string') {
 		res.status(400).json({ error: 'Invalid building type' });
 		return;
 	}
 
-	if (gameState.field[index]) {
-		res.status(400).json({ error: 'Field already occupied' });
+	// 空いているインデックスを取得
+	const emptyIndices = gameState.field
+		.map((field, index) => (field === null ? index : null))
+		.filter(index => index !== null) as number[];
+
+	if (emptyIndices.length === 0) {
+		res.status(400).json({ error: 'No empty slots available' });
 		return;
 	}
+
+	// ランダムにインデックスを選択
+	const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
 
 	// 建物のコストをチェック
 	const buildingCost = getBuildingCost(building);
@@ -72,7 +77,7 @@ app.post('/api/place-building', (req, res) => {
 	gameState.resources -= buildingCost;
 
 	// 建物を配置
-	gameState.field[index] = building;
+	gameState.field[randomIndex] = building;
 	res.json(gameState);
 });
 
@@ -89,6 +94,8 @@ const getBuildingCost = (type: string): number => {
 			return 30;
 		case 'market':
 			return 40;
+		case 'town hall': // 新しい建物のコストを追加
+			return 60;
 		default:
 			return 0;
 	}

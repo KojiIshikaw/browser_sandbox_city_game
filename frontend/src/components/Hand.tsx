@@ -27,7 +27,7 @@ const Hand: React.FC<HandProps> = ({ cards, onSelect }) => {
 						cursor: 'pointer',
 						minWidth: '100px',
 						textAlign: 'center',
-						backgroundColor: '#f0f0f0',
+						backgroundColor: '#8b4513',
 					}}
 				>
 					<h3>{card.name}</h3>
