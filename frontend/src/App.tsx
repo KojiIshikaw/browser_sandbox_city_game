@@ -125,7 +125,7 @@ const App: React.FC = () => {
 				<color attach="background" args={['skyblue']} />
 
 				<PerspectiveCamera makeDefault position={[0, 10, 20]} />
-				<ambientLight intensity={0.8} />
+				<ambientLight intensity={1.2} />
 				<directionalLight position={[10, 10, 5]} intensity={1.5} />
 
 				{/* 茶色の地面を追加 */}
