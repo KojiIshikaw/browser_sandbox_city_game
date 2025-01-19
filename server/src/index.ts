@@ -92,8 +92,6 @@ const getBuildingCost = (type: string): number => {
 			return 10;
 		case 'shop':
 			return 30;
-		case 'market':
-			return 40;
 		case 'town hall': // 新しい建物のコストを追加
 			return 60;
 		default:

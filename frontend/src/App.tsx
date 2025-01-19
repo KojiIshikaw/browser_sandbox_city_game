@@ -4,6 +4,7 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import axios from 'axios';
 import Hand from './components/Hand'; // Hand コンポーネントのインポート
 import House from './components/House';
+import Farm from './components/Farm';
 
 type GameState = {
 	turn: number;
@@ -41,10 +42,9 @@ const App: React.FC = () => {
 		const initialHand: Card[] = [
 			{ id: 1, name: 'Farm', cost: 20, effect: () => addResource(10) },
 			{ id: 2, name: 'Factory', cost: 50, effect: () => addResource(30) },
-			{ id: 3, name: 'house', cost: 10, effect: () => addResource(1) },
+			{ id: 3, name: 'House', cost: 10, effect: () => addResource(1) },
 			{ id: 4, name: 'Shop', cost: 30, effect: () => addResource(15) },
-			{ id: 5, name: 'Market', cost: 40, effect: () => addResource(20) },
-			{ id: 6, name: 'Town Hall', cost: 60, effect: () => addResidents(5) }, // 新しいカード
+			{ id: 5, name: 'Town Hall', cost: 60, effect: () => addResidents(5) }, // 新しいカード
 		];
 		setHand(initialHand);
 	}, []);
@@ -138,8 +138,8 @@ const App: React.FC = () => {
 					}
 
 					switch (building.toLowerCase()) {
-						// case 'farm':
-						// 	return <Farm key={index} position={position} />;
+						case 'farm':
+							return <Farm key={index} position={position} />;
 						case 'house':
 							return <House key={index} position={position} />;
 						// 他の建物タイプを追加
@@ -211,10 +211,6 @@ const getBuildingColor = (type: string): string => {
 			return 'blue';
 		case 'shop':
 			return 'yellow';
-		case 'market':
-			return 'purple';
-		case 'town hall':
-			return 'orange'; // 新しい建物の色を追加
 		default:
 			return 'gray';
 	}
