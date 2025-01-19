@@ -21,6 +21,7 @@ type Card = {
 const App: React.FC = () => {
 	const [gameState, setGameState] = useState<GameState | null>(null);
 	const [hand, setHand] = useState<Card[]>([]);
+	const [notification, setNotification] = useState<string | null>(null);
 
 	// ゲーム状態の取得
 	useEffect(() => {
@@ -30,6 +31,7 @@ const App: React.FC = () => {
 			})
 			.catch(error => {
 				console.error('Error fetching game state:', error);
+				setNotification('ゲーム状態の取得に失敗しました。');
 			});
 	}, []);
 
@@ -51,42 +53,51 @@ const App: React.FC = () => {
 			setGameState({ ...gameState, resources: updatedResources });
 			// バックエンドに更新を送信
 			axios.post('/api/game-state', { resources: updatedResources })
-				.catch(error => console.error('Error updating resources:', error));
+				.catch(error => {
+					console.error('Error updating resources:', error);
+					setNotification('資源の更新に失敗しました。');
+				});
 		}
 	};
 
 	const handleCardSelect = (card: Card) => {
 		if (gameState) {
+			// 資源のチェック
 			if (gameState.resources < card.cost) {
-				alert('資源が足りません!');
+				setNotification('資源が足りません!');
 				return;
 			}
 
-			// カードの効果を適用
-			card.effect();
-			const updatedResources = gameState.resources - card.cost;
-			setGameState({ ...gameState, resources: updatedResources });
+			// 空いている場所を探す
+			const emptyIndex = gameState.field.findIndex(slot => slot === null);
+			if (emptyIndex === -1) {
+				setNotification('置ける場所がありません!');
+				return;
+			}
 
-			// バックエンドに更新を送信
-			axios.post('/api/game-state', { resources: updatedResources })
-				.catch(error => console.error('Error updating resources:', error));
-
-			// 手札からカードを削除
-			setHand(prev => prev.filter(c => c.id !== card.id));
+			// 建物の配置をバックエンドにリクエスト
+			axios.post('/api/place-building', { index: emptyIndex, building: card.name })
+				.then(response => {
+					setGameState(response.data);
+					// カードの効果を適用
+					card.effect();
+					// 手札からカードを削除
+					setHand(prev => prev.filter(c => c.id !== card.id));
+				})
+				.catch(error => {
+					console.error('Error placing building:', error);
+					setNotification(error.response?.data?.error || '建物の配置に失敗しました。');
+				});
 		}
 	};
 
-	const handlePlaceBuilding = (index: number, building: string) => {
-		// バックエンドに建物配置をリクエスト
-		axios.post('/api/place-building', { index, building })
-			.then(response => {
-				setGameState(response.data);
-			})
-			.catch(error => {
-				console.error('Error placing building:', error);
-				alert(error.response?.data?.error || '建物の配置に失敗しました。');
-			});
-	};
+	// 通知メッセージを一定時間後に消す
+	useEffect(() => {
+		if (notification) {
+			const timer = setTimeout(() => setNotification(null), 3000);
+			return () => clearTimeout(timer);
+		}
+	}, [notification]);
 
 	if (!gameState) {
 		return <div>Loading...</div>;
@@ -109,12 +120,7 @@ const App: React.FC = () => {
 						<mesh
 							key={index}
 							position={[(index % 4) * 2, 0.5, Math.floor(index / 4) * 2]}
-							onClick={() => {
-								const building = prompt('配置する建物の名前を入力してください (farm, factory, research lab, shop, market):');
-								if (building) {
-									handlePlaceBuilding(index, building);
-								}
-							}}
+						// onClick ハンドラーを削除
 						>
 							<boxGeometry args={[1, 1, 1]} />
 							<meshStandardMaterial color="lightgray" opacity={0.5} transparent />
@@ -129,6 +135,21 @@ const App: React.FC = () => {
 				<p>資源: {gameState.resources}</p>
 				<Hand cards={hand} onSelect={handleCardSelect} />
 			</div>
+			{/* 通知メッセージ */}
+			{notification && (
+				<div style={{
+					position: 'absolute',
+					top: '10px',
+					left: '50%',
+					transform: 'translateX(-50%)',
+					padding: '10px 20px',
+					backgroundColor: 'rgba(255, 0, 0, 0.8)',
+					color: 'white',
+					borderRadius: '5px',
+				}}>
+					{notification}
+				</div>
+			)}
 		</div>
 	);
 };
