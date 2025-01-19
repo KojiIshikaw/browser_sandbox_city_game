@@ -88,8 +88,8 @@ const getBuildingCost = (type: string): number => {
 			return 20;
 		case 'factory':
 			return 50;
-		case 'research lab':
-			return 100;
+		case 'house':
+			return 10;
 		case 'shop':
 			return 30;
 		case 'market':

@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import axios from 'axios';
 import Hand from './components/Hand'; // Hand コンポーネントのインポート
+import House from './components/House';
 
 type GameState = {
 	turn: number;
@@ -40,7 +41,7 @@ const App: React.FC = () => {
 		const initialHand: Card[] = [
 			{ id: 1, name: 'Farm', cost: 20, effect: () => addResource(10) },
 			{ id: 2, name: 'Factory', cost: 50, effect: () => addResource(30) },
-			{ id: 3, name: 'Research Lab', cost: 100, effect: () => addResource(60) },
+			{ id: 3, name: 'house', cost: 10, effect: () => addResource(1) },
 			{ id: 4, name: 'Shop', cost: 30, effect: () => addResource(15) },
 			{ id: 5, name: 'Market', cost: 40, effect: () => addResource(20) },
 			{ id: 6, name: 'Town Hall', cost: 60, effect: () => addResidents(5) }, // 新しいカード
@@ -117,22 +118,50 @@ const App: React.FC = () => {
 				<ambientLight intensity={0.5} />
 				<directionalLight position={[10, 10, 5]} intensity={1} />
 				{/* フィールドのレンダリング */}
-				{gameState.field.map((building, index) => (
-					building ? (
-						<mesh key={index} position={[(index % 4) * 2, 0.5, Math.floor(index / 4) * 2]}>
-							<boxGeometry args={[1, 1, 1]} />
-							<meshStandardMaterial color={getBuildingColor(building)} />
-						</mesh>
-					) : (
-						<mesh
-							key={index}
-							position={[(index % 4) * 2, 0.5, Math.floor(index / 4) * 2]}
-						>
-							<boxGeometry args={[1, 1, 1]} />
-							<meshStandardMaterial color="lightgray" opacity={0.5} transparent />
-						</mesh>
-					)
-				))}
+				{gameState.field.map((building, index) => {
+					const position: [number, number, number] = [
+						(index % 4) * 2, // X座標
+						0,               // Y座標（モデルによって調整）
+						Math.floor(index / 4) * 2 // Z座標
+					];
+
+					if (!building) {
+						return (
+							<mesh
+								key={index}
+								position={position}
+							>
+								<boxGeometry args={[1, 1, 1]} />
+								<meshStandardMaterial color="lightgray" opacity={0.5} transparent />
+							</mesh>
+						);
+					}
+
+					switch (building.toLowerCase()) {
+						// case 'farm':
+						// 	return <Farm key={index} position={position} />;
+						case 'house':
+							return <House key={index} position={position} />;
+						// 他の建物タイプを追加
+						default:
+							return (
+								building ? (
+									<mesh key={index} position={[(index % 4) * 2, 0.5, Math.floor(index / 4) * 2]}>
+										<boxGeometry args={[1, 1, 1]} />
+										<meshStandardMaterial color={getBuildingColor(building)} />
+									</mesh>
+								) : (
+									<mesh
+										key={index}
+										position={[(index % 4) * 2, 0.5, Math.floor(index / 4) * 2]}
+									>
+										<boxGeometry args={[1, 1, 1]} />
+										<meshStandardMaterial color="lightgray" opacity={0.5} transparent />
+									</mesh>
+								)
+							);
+					}
+				})}
 				<OrbitControls />
 			</Canvas>
 			{/* UIコンポーネント */}
@@ -178,7 +207,7 @@ const getBuildingColor = (type: string): string => {
 			return 'green';
 		case 'factory':
 			return 'red';
-		case 'research lab':
+		case 'house':
 			return 'blue';
 		case 'shop':
 			return 'yellow';
